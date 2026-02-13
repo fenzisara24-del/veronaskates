@@ -33,6 +33,7 @@
         .btn { background: #2a5298; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; }
         .btn-success { background: #38a169; }
         .btn-danger { background: #e53e3e; }
+        .btn-warning { background: #f39c12; color: white; }
         
         /* TABLE */
         .schedule-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -60,10 +61,29 @@
         /* LINK */
         a { color: #2a5298; text-decoration: none; }
         a:hover { text-decoration: underline; }
+        
+        /* MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; }
+        .modal.active { display: flex; }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- === MODAL CAMBIO PASSWORD RESPONSABILE === -->
+        <div id="cambioPasswordModal" class="modal">
+            <div class="modal-content">
+                <h3 style="margin-bottom: 20px;">🔐 Cambia Password Responsabile</h3>
+                <input type="password" id="vecchiaPasswordResp" class="login-input" placeholder="Password attuale">
+                <input type="password" id="nuovaPasswordResp" class="login-input" placeholder="Nuova password">
+                <input type="password" id="confermaNuovaPasswordResp" class="login-input" placeholder="Conferma nuova password">
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn" style="flex:1;" onclick="auth.cambiaPasswordResponsabile()">Salva</button>
+                    <button class="btn btn-danger" style="flex:1;" onclick="ui.chiudiModale()">Annulla</button>
+                </div>
+            </div>
+        </div>
+
         <!-- === LOGIN === -->
         <div id="loginSection" class="login-section">
             <h1 style="margin-bottom: 20px;">🔐 CoachApprover</h1>
@@ -76,8 +96,8 @@
             <!-- Login Responsabile -->
             <div id="responsabileLogin">
                 <input type="password" id="responsabilePassword" class="login-input" placeholder="Password responsabile">
-                <small>Password default: admin123</small>
                 <button class="btn-login" onclick="auth.loginResponsabile()">Accedi come Responsabile</button>
+                <p style="margin-top:15px;"><small>Prima volta? <a href="#" onclick="auth.primoAccessoResponsabile()">Imposta password</a></small></p>
             </div>
             
             <!-- Login Allenatore -->
@@ -121,8 +141,9 @@
         <div id="responsabileContent" class="main-content">
             <div class="header">
                 <h1>📋 Area Responsabile</h1>
-                <div>
+                <div style="display: flex; gap: 10px; align-items: center;">
                     <span class="user-badge">Responsabile</span>
+                    <button class="btn btn-warning" onclick="ui.apriModalePassword()">🔑 Cambia Password</button>
                     <button class="btn-logout" onclick="auth.logout()">Logout</button>
                 </div>
             </div>
@@ -272,6 +293,10 @@
         // === DATABASE ===
         let turni = JSON.parse(localStorage.getItem('turniCoach')) || [];
         let utenti = JSON.parse(localStorage.getItem('utentiCoach')) || [];
+        let responsabile = JSON.parse(localStorage.getItem('responsabileCoach')) || { 
+            password: null,  // Nessuna password di default
+            primoAccesso: true 
+        };
         let currentUser = null;
 
         // === UTILS ===
@@ -291,13 +316,36 @@
             salva: () => {
                 localStorage.setItem('turniCoach', JSON.stringify(turni));
                 localStorage.setItem('utentiCoach', JSON.stringify(utenti));
+                localStorage.setItem('responsabileCoach', JSON.stringify(responsabile));
             }
         };
 
         // === AUTENTICAZIONE ===
         const auth = {
+            primoAccessoResponsabile: () => {
+                if (responsabile.primoAccesso) {
+                    const nuovaPassword = prompt("Primo accesso: imposta la tua password responsabile:");
+                    if (nuovaPassword && nuovaPassword.trim() !== '') {
+                        responsabile.password = nuovaPassword;
+                        responsabile.primoAccesso = false;
+                        utils.salva();
+                        alert('✅ Password responsabile impostata! Ora puoi accedere.');
+                    }
+                } else {
+                    alert('❌ Password già impostata. Usa il login normale.');
+                }
+            },
+
             loginResponsabile: () => {
-                if (document.getElementById('responsabilePassword').value === 'admin123') {
+                const pswInserita = document.getElementById('responsabilePassword').value;
+                
+                // Se è il primo accesso e non c'è password
+                if (responsabile.primoAccesso) {
+                    alert('❌ Prima accesso: clicca su "Imposta password"');
+                    return;
+                }
+                
+                if (responsabile.password && pswInserita === responsabile.password) {
                     currentUser = { type: 'responsabile', nome: 'Responsabile' };
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('responsabileContent').classList.add('active');
@@ -306,6 +354,35 @@
                 } else {
                     alert('❌ Password errata!');
                 }
+            },
+
+            cambiaPasswordResponsabile: () => {
+                const vecchia = document.getElementById('vecchiaPasswordResp').value;
+                const nuova = document.getElementById('nuovaPasswordResp').value;
+                const conferma = document.getElementById('confermaNuovaPasswordResp').value;
+
+                if (vecchia !== responsabile.password) {
+                    alert('❌ Password attuale errata!');
+                    return;
+                }
+
+                if (nuova !== conferma) {
+                    alert('❌ Le nuove password non coincidono!');
+                    return;
+                }
+
+                if (nuova.length < 4) {
+                    alert('❌ La password deve essere almeno 4 caratteri');
+                    return;
+                }
+
+                responsabile.password = nuova;
+                utils.salva();
+                alert('✅ Password cambiata con successo!');
+                ui.chiudiModale();
+                document.getElementById('vecchiaPasswordResp').value = '';
+                document.getElementById('nuovaPasswordResp').value = '';
+                document.getElementById('confermaNuovaPasswordResp').value = '';
             },
 
             registraAllenatore: () => {
@@ -320,6 +397,11 @@
 
                 if (password !== conferma) {
                     alert('❌ Le password non coincidono');
+                    return;
+                }
+
+                if (password.length < 3) {
+                    alert('❌ Password troppo corta (minimo 3 caratteri)');
                     return;
                 }
 
@@ -380,7 +462,8 @@
                     compenso: (ore * 25).toFixed(2),
                     note: document.getElementById('noteAllenatore').value,
                     stato: 'in_attesa',
-                    tariffa: 25
+                    tariffa: 25,
+                    dataInserimento: new Date().toLocaleDateString()
                 });
 
                 utils.salva();
@@ -471,6 +554,8 @@
                 document.getElementById('allenatoreTurniBody').innerHTML = turniPersonali.map(t => {
                     const statoBadge = t.stato === 'approvato' 
                         ? '<span class="status-badge status-approvato">✅ Approvato</span>'
+                        : t.stato === 'respinto'
+                        ? '<span class="status-badge status-respinto">❌ Respinto</span>'
                         : '<span class="status-badge status-in-attesa">⏳ In attesa</span>';
                     
                     return `<tr class="${utils.classeNote(t.note)}">
@@ -529,6 +614,14 @@
             mostraLogin: () => {
                 document.getElementById('allenatoreLogin').style.display = 'block';
                 document.getElementById('registrazioneAllenatore').style.display = 'none';
+            },
+
+            apriModalePassword: () => {
+                document.getElementById('cambioPasswordModal').classList.add('active');
+            },
+
+            chiudiModale: () => {
+                document.getElementById('cambioPasswordModal').classList.remove('active');
             },
 
             cambiaTabResp: (tab) => {
