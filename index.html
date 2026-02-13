@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestione Allenatori</title>
+    <style>
+        /* === CSS - STILI === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* LOGIN */
+        .login-section { background: white; border-radius: 15px; padding: 30px; max-width: 400px; margin: 50px auto; text-align: center; }
+        .user-type-btn { padding: 10px 20px; margin: 10px; border: 2px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer; }
+        .user-type-btn.active { background: #2a5298; color: white; }
+        .login-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 2px solid #e0e0e0; }
+        .btn-login { background: #2a5298; color: white; padding: 12px; width: 100%; border: none; border-radius: 8px; cursor: pointer; }
+        
+        /* MAIN */
+        .main-content { background: white; border-radius: 15px; padding: 30px; display: none; }
+        .main-content.active { display: block; }
+        .header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .user-badge { background: #2a5298; color: white; padding: 8px 15px; border-radius: 20px; }
+        .btn-logout { background: #e53e3e; color: white; padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        
+        /* FORM */
+        .form-section { background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 30px; }
+        .form-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        select, input, textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; }
+        
+        .btn { background: #2a5298; color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-success { background: #38a169; }
+        .btn-danger { background: #e53e3e; }
+        
+        /* TABLE */
+        .schedule-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .schedule-table th { background: #2a5298; color: white; padding: 15px; text-align: left; }
+        .schedule-table td { padding: 15px; border-bottom: 1px solid #e0e0e0; }
+        
+        /* STATUS */
+        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 12px; }
+        .status-in-attesa { background: #fed7d7; color: #9b2c2c; }
+        .status-approvato { background: #c6f6d5; color: #22543d; }
+        
+        .ritardo { background-color: #ffebee; border-left: 5px solid #f44336; }
+        .uscita-anticipata { background-color: #fff3e0; border-left: 5px solid #ff9800; }
+        
+        .summary-box { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 20px; border-radius: 10px; margin-top: 30px; }
+        .private-summary { background: linear-gradient(135deg, #38a169, #2f855a); color: white; padding: 20px; border-radius: 10px; margin-top: 30px; }
+        .summary-stats { display: flex; justify-content: space-around; flex-wrap: wrap; }
+        .stat-value { font-size: 2em; font-weight: bold; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        .tab { padding: 10px 20px; cursor: pointer; border-radius: 8px 8px 0 0; }
+        .tab.active { background: #2a5298; color: white; }
+        .action-btn { padding: 5px 10px; margin: 0 5px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- === HTML - STRUTTURA === -->
+        <!-- LOGIN -->
+        <div id="loginSection" class="login-section">
+            <h1>🔐 Accesso</h1>
+            <div>
+                <button class="user-type-btn active" onclick="ui.setUserType('responsabile')">👤 Responsabile</button>
+                <button class="user-type-btn" onclick="ui.setUserType('allenatore')">🏋️ Allenatore</button>
+            </div>
+            <div id="responsabileLogin">
+                <input type="password" id="responsabilePassword" class="login-input" placeholder="Password">
+                <small>Password: admin123</small>
+                <button class="btn-login" onclick="auth.loginResponsabile()">Accedi</button>
+            </div>
+            <div id="allenatoreLogin" style="display:none;">
+                <select id="allenatoreSelect" class="login-input">
+                    <option value="Sara Fenzi">Sara Fenzi</option>
+                    <option value="Giada Meneghelli">Giada Meneghelli</option>
+                    <option value="Benedetta Groppello">Benedetta Groppello</option>
+                    <option value="Elisa Turrini">ELisa turrini</option>
+                    <option value="Carlo Trevisan">Carlo Trevisan</option>
+                    <option value="Valentina Fusa">Valentina Fusa</option>
+                    <option value="Valeria Corsato">Valeria Corsato</option>
+                    <option value="Turrini Nicola">Turrini Nicola</option>
+                </select>
+                <input type="password" id="allenatorePassword" class="login-input" placeholder="Password">
+                <small>Password: 1234</small>
+                <button class="btn-login" onclick="auth.loginAllenatore()">Accedi</button>
+            </div>
+        </div>
+
+        <!-- RESPONSABILE -->
+        <div id="responsabileContent" class="main-content">
+            <div class="header">
+                <h1>📋 Approvazioni</h1>
+                <div><span class="user-badge">Responsabile</span><button class="btn-logout" onclick="auth.logout()">Logout</button></div>
+            </div>
+            <div class="tabs">
+                <div class="tab active" onclick="ui.cambiaTabResp('da-approvare')">⏳ Da Approvare</div>
+                <div class="tab" onclick="ui.cambiaTabResp('approvati')">✅ Approvati</div>
+            </div>
+            <div id="tabDaApprovare">
+                <div style="overflow-x: auto;">
+                    <table class="schedule-table">
+                        <thead><tr><th>Allenatore</th><th>Giorno</th><th>Ore</th><th>Note</th><th>Azioni</th></tr></thead>
+                        <tbody id="approvazioniBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="tabApprovatiResp" style="display:none;">
+                <div style="overflow-x: auto;">
+                    <table class="schedule-table">
+                        <thead><tr><th>Allenatore</th><th>Giorno</th><th>Ore</th><th>Compenso</th><th>Note</th></tr></thead>
+                        <tbody id="approvatiBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="summary-box">
+                <h3>📈 Riepilogo</h3>
+                <div class="summary-stats">
+                    <div><span class="stat-value" id="totaleOreResp">0</span><br>Ore Approvate</div>
+                    <div><span class="stat-value" id="totaleCompensoResp">€0</span><br>Compenso Totale</div>
+                    <div><span class="stat-value" id="turniInAttesa">0</span><br>In Attesa</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALLENATORE -->
+        <div id="allenatoreContent" class="main-content">
+            <div class="header">
+                <h1>🏋️ Inserisci Ore</h1>
+                <div><span class="user-badge" id="allenatoreNomeBadge"></span><button class="btn-logout" onclick="auth.logout()">Logout</button></div>
+            </div>
+            <div class="form-section">
+                <h2>➕ Nuovo Turno</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📅 Giorno</label>
+                        <select id="giornoAllenatore">
+                            <option value="Lunedì">Lunedì</option><option value="Martedì">Martedì</option>
+                            <option value="Mercoledì">Mercoledì</option><option value="Giovedì">Giovedì</option>
+                            <option value="Venerdì">Venerdì</option><option value="Sabato">Sabato</option><option value="Domenica">Domenica</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>🕐 Inizio</label><input type="time" id="oraInizioAllenatore" value="09:00"></div>
+                    <div class="form-group"><label>🕐 Fine</label><input type="time" id="oraFineAllenatore" value="17:00"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>📝 Note</label><textarea id="noteAllenatore" rows="2"></textarea></div>
+                </div>
+                <button class="btn btn-success" onclick="turni.inserisci()">⏳ Invia</button>
+            </div>
+            <h2>📊 I Miei Turni</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="ui.cambiaTabAllenatore('tutti')">📋 Tutti</div>
+                <div class="tab" onclick="ui.cambiaTabAllenatore('approvati')">✅ Approvati</div>
+                <div class="tab" onclick="ui.cambiaTabAllenatore('attesa')">⏳ In Attesa</div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="schedule-table">
+                    <thead><tr><th>Giorno</th><th>Ore</th><th>Stato</th><th>Compenso</th><th>Note</th><th>Azioni</th></tr></thead>
+                    <tbody id="allenatoreTurniBody"></tbody>
+                </table>
+            </div>
+            <div class="private-summary">
+                <h3>💰 Il Mio Riepilogo</h3>
+                <div class="summary-stats">
+                    <div><span class="stat-value" id="mieOreTotali">0</span><br>Ore Approvate</div>
+                    <div><span class="stat-value" id="mioCompensoTotale">€0</span><br>Compenso</div>
+                    <div><span class="stat-value" id="mieOreInAttesa">0</span><br>In Attesa</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === JAVASCRIPT - LOGICA ===
+        // DATABASE
+        let turni = JSON.parse(localStorage.getItem('turniSoloApprovazioni')) || [];
+        let currentUser = null;
+
+        // UTILS
+        const utils = {
+            calcolaOre: (i, f) => { 
+                const [hi, mi] = i.split(':').map(Number), [hf, mf] = f.split(':').map(Number);
+                return (hf - hi + (mf - mi) / 60).toFixed(2);
+            },
+            classeNote: n => n?.toLowerCase().includes('ritardo') ? 'ritardo' : n?.toLowerCase().includes('uscita') || n?.toLowerCase().includes('anticipata') ? 'uscita-anticipata' : '',
+            salva: () => localStorage.setItem('turniSoloApprovazioni', JSON.stringify(turni))
+        };
+
+        // AUTH
+        const auth = {
+            loginResponsabile: () => { if (responsabilePassword.value === 'admin123') { currentUser = { type: 'responsabile' }; ui.mostra('responsabile'); agg.approvazioni(); agg.riepilogoResp(); } },
+            loginAllenatore: () => { if (allenatorePassword.value === '1234') { 
+                currentUser = { type: 'allenatore', name: allenatoreSelect.value };
+                allenatoreNomeBadge.textContent = currentUser.name;
+                ui.mostra('allenatore'); agg.turniAllenatore('tutti');
+            }},
+            logout: () => { currentUser = null; loginSection.style.display = 'block'; responsabileContent.classList.remove('active'); allenatoreContent.classList.remove('active'); }
+        };
+
+        // TURNI
+        const turniManager = {
+            inserisci: () => {
+                const ore = utils.calcolaOre(oraInizioAllenatore.value, oraFineAllenatore.value);
+                turni.push({ id: Date.now(), allenatore: currentUser.name, giorno: giornoAllenatore.value, oraInizio: oraInizioAllenatore.value, oraFine: oraFineAllenatore.value, oreTotali: ore, compenso: (ore * 25).toFixed(2), note: noteAllenatore.value, stato: 'in_attesa', tariffa: 25 });
+                utils.salva(); alert('✅ Inviato!'); oraInizioAllenatore.value = '09:00'; oraFineAllenatore.value = '17:00'; noteAllenatore.value = '';
+                agg.turniAllenatore('tutti'); if (currentUser?.type === 'responsabile') { agg.approvazioni(); agg.riepilogoResp(); }
+            },
+            approva: id => { turni.find(t => t.id === id).stato = 'approvato'; utils.salva(); agg.approvazioni(); agg.riepilogoResp(); agg.turniAllenatore('tutti'); },
+            respingi: id => { turni.find(t => t.id === id).stato = 'respinto'; utils.salva(); agg.approvazioni(); agg.turniAllenatore('tutti'); },
+            elimina: id => { if (confirm('Eliminare?')) { turni = turni.filter(t => t.id !== id); utils.salva(); agg.turniAllenatore('tutti'); if (currentUser?.type === 'responsabile') { agg.approvazioni(); agg.riepilogoResp(); } } }
+        };
+
+        // AGGIORNAMENTI
+        const agg = {
+            approvazioni: () => {
+                approvazioniBody.innerHTML = turni.filter(t => t.stato === 'in_attesa').map(t => 
+                    `<tr class="${utils.classeNote(t.note)}"><td><strong>${t.allenatore}</strong></td><td>${t.giorno}</td><td>${t.oreTotali}h</td><td>${t.note || '-'}</td>
+                    <td><button class="action-btn" style="background:#38a169;color:white;" onclick="turniManager.approva(${t.id})">✅</button>
+                    <button class="action-btn" style="background:#e53e3e;color:white;" onclick="turniManager.respingi(${t.id})">❌</button></td></tr>`
+                ).join('');
+                approvatiBody.innerHTML = turni.filter(t => t.stato === 'approvato').map(t => 
+                    `<tr><td>${t.allenatore}</td><td>${t.giorno}</td><td>${t.oreTotali}h</td><td>€${t.compenso}</td><td>${t.note || '-'}</td></tr>`
+                ).join('');
+            },
+            turniAllenatore: f => {
+                let tp = turni.filter(t => t.allenatore === currentUser.name);
+                if (f === 'approvati') tp = tp.filter(t => t.stato === 'approvato');
+                if (f === 'attesa') tp = tp.filter(t => t.stato === 'in_attesa');
+                allenatoreTurniBody.innerHTML = tp.map(t => 
+                    `<tr class="${utils.classeNote(t.note)}"><td>${t.giorno}</td><td>${t.oreTotali}h</td>
+                    <td><span class="status-badge ${t.stato === 'approvato' ? 'status-approvato' : 'status-in-attesa'}">${t.stato === 'approvato' ? '✅' : '⏳'}</span></td>
+                    <td>€${t.compenso}</td><td>${t.note || '-'}</td>
+                    <td>${t.stato === 'in_attesa' ? `<button class="action-btn delete-btn" onclick="turniManager.elimina(${t.id})">🗑️</button>` : '-'}</td></tr>`
+                ).join('');
+                const app = turni.filter(t => t.allenatore === currentUser.name && t.stato === 'approvato');
+                const att = turni.filter(t => t.allenatore === currentUser.name && t.stato === 'in_attesa');
+                mieOreTotali.textContent = app.reduce((s,t) => s + parseFloat(t.oreTotali), 0).toFixed(2);
+                mioCompensoTotale.textContent = `€${app.reduce((s,t) => s + parseFloat(t.compenso), 0).toFixed(2)}`;
+                mieOreInAttesa.textContent = att.reduce((s,t) => s + parseFloat(t.oreTotali), 0).toFixed(2);
+            },
+            riepilogoResp: () => {
+                const app = turni.filter(t => t.stato === 'approvato'), att = turni.filter(t => t.stato === 'in_attesa');
+                totaleOreResp.textContent = app.reduce((s,t) => s + parseFloat(t.oreTotali), 0).toFixed(2);
+                totaleCompensoResp.textContent = `€${app.reduce((s,t) => s + parseFloat(t.compenso), 0).toFixed(2)}`;
+                turniInAttesa.textContent = att.length;
+            }
+        };
+
+        // UI
+        const ui = {
+            setUserType: t => {
+                document.querySelectorAll('.user-type-btn').forEach(b => b.classList.remove('active'));
+                event.target.classList.add('active');
+                responsabileLogin.style.display = t === 'responsabile' ? 'block' : 'none';
+                allenatoreLogin.style.display = t === 'allenatore' ? 'block' : 'none';
+            },
+            mostra: ruolo => {
+                loginSection.style.display = 'none';
+                if (ruolo === 'responsabile') responsabileContent.classList.add('active');
+                else allenatoreContent.classList.add('active');
+            },
+            cambiaTabResp: t => {
+                document.querySelectorAll('#responsabileContent .tab').forEach(tab => tab.classList.remove('active'));
+                if (t === 'da-approvare') {
+                    document.querySelector('#responsabileContent .tab').classList.add('active');
+                    tabDaApprovare.style.display = 'block'; tabApprovatiResp.style.display = 'none';
+                } else {
+                    document.querySelectorAll('#responsabileContent .tab')[1].classList.add('active');
+                    tabDaApprovare.style.display = 'none'; tabApprovatiResp.style.display = 'block';
+                }
+            },
+            cambiaTabAllenatore: t => {
+                document.querySelectorAll('#allenatoreContent .tab').forEach(tab => tab.classList.remove('active'));
+                if (t === 'tutti') document.querySelector('#allenatoreContent .tab').classList.add('active');
+                else if (t === 'approvati') document.querySelectorAll('#allenatoreContent .tab')[1].classList.add('active');
+                else document.querySelectorAll('#allenatoreContent .tab')[2].classList.add('active');
+                agg.turniAllenatore(t);
+            }
+        };
+
+        // Esponi globalmente
+        window.auth = auth;
+        window.ui = ui;
+        window.turniManager = turniManager;
+        window.agg = agg;
+    </script>
+</body>
+</html>
